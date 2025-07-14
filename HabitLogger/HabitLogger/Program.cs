@@ -21,8 +21,6 @@ class Program
                     )";
 
             tableCmd.ExecuteNonQuery();
-
-            connection.Close();
         }
 
         GetUserInput();
@@ -30,10 +28,10 @@ class Program
 
     private static void GetUserInput()
     {
-        Console.Clear();
         bool closeApp = false;
         while (!closeApp)
         {
+            Console.Clear();
             Console.WriteLine("\n\nMAIN MENU");
             Console.WriteLine("\nWhat would you like to do?");
             Console.WriteLine("\nType 0 to Close Application.");
@@ -88,8 +86,7 @@ class Program
             if(checkQuery == 0)
             {
                 Console.WriteLine($"\n\nRecord with Id {recordId} doesn't exist.\n\n");
-                connection.Close();
-                Update();
+                return;
             }
 
             string date = GetDateInput();
@@ -97,11 +94,13 @@ class Program
             int quantity = GetNumberInput("\n\nPlease insert number of glasses or other measure of your choice (no decimals allowed)\n\n");
 
             var tableCmd = connection.CreateCommand();
-            tableCmd.CommandText = $"UPDATE drinking_water SET date = '{date}', quantity = {quantity} WHERE Id = {recordId}";
+            tableCmd.CommandText = $"UPDATE drinking_water SET date = @date, quantity = @quantity WHERE Id = @id";
+
+            tableCmd.Parameters.Add("@date", SqliteType.Text).Value = date;
+            tableCmd.Parameters.Add("@quantity", SqliteType.Integer).Value = quantity;
+            tableCmd.Parameters.Add("@id", SqliteType.Integer).Value = recordId;
 
             tableCmd.ExecuteNonQuery();
-
-            connection.Close();
         }
     }
 
@@ -117,20 +116,20 @@ class Program
             connection.Open();
             var tableCmd = connection.CreateCommand();
 
-            tableCmd.CommandText = $"DELETE from drinking_water WHERE Id = {recordId}";
+            tableCmd.CommandText = $"DELETE from drinking_water WHERE Id = @id";
+
+            tableCmd.Parameters.Add("@id", SqliteType.Integer).Value = recordId;
 
             int rowCount = tableCmd.ExecuteNonQuery();
 
             if (rowCount == 0)
             {
                 Console.WriteLine($"\n\nRecord with Id {recordId} doesn't exist. \n\n");
-                Delete();
+                return;
             }
         }
 
         Console.WriteLine($"\n\nRecord with Id {recordId} was deleted. \n\n");
-
-        GetUserInput();
     }
 
     private static void GetAllRecords()
@@ -165,14 +164,14 @@ class Program
                 Console.WriteLine("No rows found");
             }
 
-            connection.Close();
-
             Console.WriteLine("------------------------------------------\n");
             foreach (var dw in tableData)
             {
                 Console.WriteLine($"{dw.Id} - {dw.Date.ToString("dd-MMM-yyyy")} - Quantity: {dw.Quantity}");
             }
             Console.WriteLine("------------------------------------------\n");
+            Console.WriteLine("\nType any key to continue...");
+            Console.ReadKey();
         }
     }
 
@@ -187,11 +186,12 @@ class Program
             connection.Open();
             var tableCmd = connection.CreateCommand();
             tableCmd.CommandText =
-               $"INSERT INTO drinking_water(date, quantity) VALUES('{date}', {quantity})";
+               $"INSERT INTO drinking_water(date, quantity) VALUES(@date, @quantity)";
+
+            tableCmd.Parameters.Add("@date", SqliteType.Text).Value = date;
+            tableCmd.Parameters.Add("@quantity", SqliteType.Integer).Value = quantity;
 
             tableCmd.ExecuteNonQuery();
-
-            connection.Close();
         }
 
     }
